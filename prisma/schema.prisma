@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for sales team members
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String    // Hashed password
+  image         String?   // Profile image URL
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  companyId     String    // Company they belong to
+  company       Company   @relation(fields: [companyId], references: [id])
+  leads         Lead[]    // Leads assigned to this user
+  alerts        Alert[]   // Alerts for this user
+  
+  @@index([companyId])
+}
+
+// Company model for customer accounts (B2B)
+model Company {
+  id            String    @id @default(cuid())
+  name          String
+  domain        String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  users         User[]    // Team members
+  leads         Lead[]    // Company's leads
+  settings      Settings? // Company settings
+}
+
+// Lead model for prospect contacts
+model Lead {
+  id            String        @id @default(cuid())
+  email         String
+  firstName     String?
+  lastName      String?
+  title         String?
+  companyName   String?      // Name of the lead's company
+  score         Int          @default(0) // Engagement score
+  status        LeadStatus   @default(NEW)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  companyId     String       // Company tracking this lead
+  assignedTo    String?      // Assigned sales rep
+  ownerCompany  Company      @relation(fields: [companyId], references: [id])
+  assignedUser  User?        @relation(fields: [assignedTo], references: [id])
+  interactions  Interaction[] // Lead's interactions
+  alerts        Alert[]      // Alerts generated for this lead
+  
+  @@index([companyId])
+  @@index([assignedTo])
+  @@unique([email, companyId]) // Same lead email can exist for different companies
+}
+
+// Interaction model for touchpoint events
+model Interaction {
+  id            String          @id @default(cuid())
+  type          InteractionType
+  channel       Channel
+  details       Json            // Flexible JSON for different interaction types
+  timestamp     DateTime        @default(now())
+  leadId        String
+  lead          Lead           @relation(fields: [leadId], references: [id])
+  
+  @@index([leadId])
+  @@index([timestamp])
+}
+
+// Alert model for engagement notifications
+model Alert {
+  id            String      @id @default(cuid())
+  type          AlertType
+  message       String
+  isRead        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  leadId        String
+  userId        String
+  lead          Lead        @relation(fields: [leadId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  
+  @@index([leadId])
+  @@index([userId])
+}
+
+// Settings model for threshold configurations
+model Settings {
+  id                String    @id @default(cuid())
+  companyId         String    @unique
+  company           Company   @relation(fields: [companyId], references: [id])
+  emailThreshold    Int       @default(5)    // Number of email interactions
+  webThreshold      Int       @default(3)    // Number of web visits
+  socialThreshold   Int       @default(2)    // Number of social interactions
+  timeWindow        Int       @default(7)    // Days to consider for thresholds
+  notifyChannels    String[]  @default(["email", "in-app"]) // Notification channels
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+enum LeadStatus {
+  NEW
+  NURTURING
+  SALES_READY
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+enum InteractionType {
+  EMAIL_OPEN
+  EMAIL_CLICK
+  EMAIL_REPLY
+  WEB_VISIT
+  WEB_DOWNLOAD
+  SOCIAL_LIKE
+  SOCIAL_SHARE
+  SOCIAL_COMMENT
+}
+
+enum Channel {
+  EMAIL
+  WEBSITE
+  LINKEDIN
+  TWITTER
+  OTHER
+}
+
+enum AlertType {
+  SALES_READY
+  HIGH_ENGAGEMENT
+  MULTIPLE_VISITS
+  CONTENT_DOWNLOAD
+  SOCIAL_MENTION
+}
