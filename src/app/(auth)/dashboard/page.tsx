@@ -4,6 +4,18 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { analytics, type EngagementMetrics } from '@/lib/analytics';
+import {
+  ArrowUpIcon,
+  ArrowDownIcon,
+  UserIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  ClockIcon,
+  ChartBarIcon,
+  CursorArrowRaysIcon,
+  BoltIcon,
+  ArrowPathIcon,
+} from '@heroicons/react/24/outline';
 
 interface ExtendedUser {
   id: string;
@@ -20,46 +32,9 @@ interface Stat {
   change: string;
   changeType: string;
   metricKey: keyof EngagementMetrics;
+  icon: any;
+  description: string;
 }
-
-// Custom icon components
-const Icons = {
-  ChevronUp: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z" />
-    </svg>
-  ),
-  ChevronDown: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
-    </svg>
-  ),
-  ChevronRight: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-    </svg>
-  ),
-  User: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-    </svg>
-  ),
-  Email: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-    </svg>
-  ),
-  Phone: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M6.62 10.79c1.44 2.83 3.76 5.15 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-    </svg>
-  ),
-  Clock: () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
-    </svg>
-  )
-};
 
 const stats: Stat[] = [
   {
@@ -68,6 +43,8 @@ const stats: Stat[] = [
     change: '+12.5%',
     changeType: 'positive',
     metricKey: 'totalLeads',
+    icon: UserIcon,
+    description: 'Active leads in your pipeline',
   },
   {
     name: 'Engagement Rate',
@@ -75,6 +52,8 @@ const stats: Stat[] = [
     change: '+5.4%',
     changeType: 'positive',
     metricKey: 'engagementRate',
+    icon: CursorArrowRaysIcon,
+    description: 'Leads actively engaging with content',
   },
   {
     name: 'Average Response Time',
@@ -82,6 +61,8 @@ const stats: Stat[] = [
     change: '-0.3h',
     changeType: 'positive',
     metricKey: 'averageResponseTime',
+    icon: BoltIcon,
+    description: 'Time to first response',
   },
   {
     name: 'Conversion Rate',
@@ -89,6 +70,8 @@ const stats: Stat[] = [
     change: '-2.1%',
     changeType: 'negative',
     metricKey: 'conversionRate',
+    icon: ChartBarIcon,
+    description: 'Leads converted to customers',
   },
 ];
 
@@ -104,7 +87,7 @@ const recentActivity = [
     },
     action: 'replied to your email',
     timestamp: '2 hours ago',
-    icon: Icons.Email,
+    icon: EnvelopeIcon,
   },
   {
     id: 2,
@@ -117,7 +100,7 @@ const recentActivity = [
     },
     action: 'scheduled a call',
     timestamp: '4 hours ago',
-    icon: Icons.Phone,
+    icon: PhoneIcon,
   },
   {
     id: 3,
@@ -130,7 +113,7 @@ const recentActivity = [
     },
     action: 'became a new lead',
     timestamp: '6 hours ago',
-    icon: Icons.User,
+    icon: UserIcon,
   },
 ];
 
@@ -138,23 +121,11 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-function getActivityTypeClasses(type: string): string {
-  switch (type) {
-    case 'lead':
-      return 'bg-success/10 text-success';
-    case 'email':
-      return 'bg-primary/10 text-primary';
-    case 'call':
-      return 'bg-warning/10 text-warning';
-    default:
-      return '';
-  }
-}
-
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [timeRange, setTimeRange] = useState('7d');
   const [metrics, setMetrics] = useState<EngagementMetrics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Track page view
@@ -172,176 +143,210 @@ export default function DashboardPage() {
     }
   }, [session]);
 
-  useEffect(() => {
-    async function fetchMetrics() {
-      const endDate = new Date();
-      const startDate = new Date();
-      
-      // Adjust start date based on selected time range
-      switch (timeRange) {
-        case '24h':
-          startDate.setDate(startDate.getDate() - 1);
-          break;
-        case '7d':
-          startDate.setDate(startDate.getDate() - 7);
-          break;
-        case '30d':
-          startDate.setDate(startDate.getDate() - 30);
-          break;
-        case '90d':
-          startDate.setDate(startDate.getDate() - 90);
-          break;
-      }
-
-      try {
-        const data = await analytics.getEngagementMetrics({ startDate, endDate });
-        setMetrics(data);
-      } catch (error) {
-        console.error('Error fetching metrics:', error);
-      }
+  async function fetchMetrics() {
+    setIsLoading(true);
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    switch (timeRange) {
+      case '24h':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
     }
 
+    try {
+      const data = await analytics.getEngagementMetrics({ startDate, endDate });
+      setMetrics(data);
+    } catch (error) {
+      console.error('Error fetching metrics:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
     fetchMetrics();
   }, [timeRange]);
 
-  // Track activity when user interacts with items
-  const handleActivityClick = (activity: any) => {
-    analytics.trackLeadActivity(activity.person.id, 'page_viewed', {
-      activityType: activity.type,
-      activityId: activity.id,
-    });
-  };
+  function getActivityTypeClasses(type: string): string {
+    switch (type) {
+      case 'lead':
+        return 'bg-emerald-50 text-emerald-700 ring-emerald-600/20';
+      case 'email':
+        return 'bg-blue-50 text-blue-700 ring-blue-600/20';
+      case 'call':
+        return 'bg-amber-50 text-amber-700 ring-amber-600/20';
+      default:
+        return '';
+    }
+  }
 
   return (
-    <div className="min-h-full">
-      {/* Page header */}
-      <header className="bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
-                Welcome back, {session?.user?.name?.split(' ')[0] || 'there'}
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Here's what's happening with your leads today
-              </p>
-            </div>
-            <div className="flex items-center gap-x-4">
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value)}
-                className="block rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary sm:text-sm sm:leading-6"
-              >
-                <option value="24h">Last 24 hours</option>
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="90d">Last 90 days</option>
-              </select>
-              <button
-                type="button"
-                className="btn-primary"
-              >
-                Generate Report
-              </button>
-            </div>
-          </div>
+    <div className="min-h-full bg-gray-50/30">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header section */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Welcome back, {session?.user?.name?.split(' ')[0] || 'User'}
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Here's what's happening with your leads today
+          </p>
         </div>
-      </header>
 
-      <div className="py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Stats */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.name} className="card p-6">
-                <dt className="text-sm font-medium text-gray-500">{stat.name}</dt>
-                <dd className="mt-2 flex items-baseline justify-between md:block lg:flex">
-                  <div className="flex items-baseline text-2xl font-semibold text-gray-900">
-                    {metrics ? String(metrics[stat.metricKey]) : stat.value}
-                  </div>
-                  <div
-                    className={classNames(
-                      stat.changeType === 'positive'
-                        ? 'bg-success/10 text-success'
-                        : 'bg-error/10 text-error',
-                      'inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium md:mt-2 lg:mt-0'
-                    )}
-                  >
-                    <span className="mr-1">
-                      {stat.changeType === 'positive' ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
-                    </span>
-                    <span>{stat.change}</span>
-                  </div>
-                </dd>
-              </div>
-            ))}
+        {/* Time range selector and refresh */}
+        <div className="mb-6 flex items-center justify-between bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700">Time period:</span>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="rounded-md border-0 bg-white py-1.5 pl-3 pr-8 text-sm text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary"
+            >
+              <option value="24h">Last 24 hours</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+            </select>
           </div>
 
-          {/* Activity feed */}
-          <div className="mt-8">
-            <h2 className="text-base font-semibold leading-7 text-gray-900">
-              Recent Activity
-            </h2>
-            <div className="mt-4 card divide-y divide-gray-200">
-              {recentActivity.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-6 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-                  onClick={() => handleActivityClick(item)}
-                >
-                  <div className="flex items-center gap-x-4">
-                    <div className="flex-shrink-0">
-                      <Image
-                        src={item.person.imageUrl}
-                        alt=""
-                        width={48}
-                        height={48}
-                        className="rounded-full bg-gray-50 object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm">
-                          <p className="font-semibold text-gray-900">
-                            {item.person.name}
-                          </p>
-                          <p className="mt-0.5 text-xs text-gray-500">
-                            {item.person.role} at {item.person.company}
-                          </p>
-                        </div>
-                        <div className="ml-4 flex flex-shrink-0 items-center gap-x-4">
-                          <div
-                            className={classNames(
-                              'inline-flex items-center gap-x-1 rounded-full px-2 py-1 text-xs font-medium',
-                              getActivityTypeClasses(item.type)
-                            )}
-                          >
-                            <span className="flex items-center">
-                              <item.icon />
-                            </span>
-                            <span>{item.type}</span>
-                          </div>
-                          <time
-                            dateTime={item.timestamp}
-                            className="text-xs text-gray-500 whitespace-nowrap"
-                          >
-                            {item.timestamp}
-                          </time>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center gap-x-2 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <Icons.Clock />
-                        </span>
-                        <span className="truncate">{item.action}</span>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0 self-center">
-                      <Icons.ChevronRight />
-                    </div>
+          <button
+            onClick={() => fetchMetrics()}
+            className="inline-flex items-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          >
+            <ArrowPathIcon className="h-3 w-3 flex-shrink-0" />
+            Refresh data
+          </button>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.name}
+              className="relative overflow-hidden rounded-lg bg-white px-6 py-5 shadow-sm ring-1 ring-black/5 hover:shadow-md transition-shadow duration-200"
+            >
+              <dt>
+                <div className={classNames(
+                  stat.changeType === 'positive' ? 'bg-emerald-50' : 'bg-rose-50',
+                  'absolute rounded-lg p-2'
+                )}>
+                  <div className="flex h-8 w-8 items-center justify-center">
+                    <stat.icon
+                      className={classNames(
+                        stat.changeType === 'positive' ? 'text-emerald-600' : 'text-rose-600',
+                        'h-4 w-4 flex-shrink-0'
+                      )}
+                      aria-hidden="true"
+                      width={16}
+                      height={16}
+                      viewBox="0 0 24 24"
+                      preserveAspectRatio="xMidYMid meet"
+                    />
                   </div>
                 </div>
-              ))}
+                <p className="ml-16 truncate text-sm font-medium text-gray-600">
+                  {stat.name}
+                </p>
+              </dt>
+              <dd className="ml-16 flex flex-col gap-y-1.5">
+                <p className="text-2xl font-semibold tracking-tight text-gray-900">
+                  {stat.value}
+                </p>
+                <div className="flex items-baseline">
+                  <p
+                    className={classNames(
+                      stat.changeType === 'positive' ? 'text-emerald-600' : 'text-rose-600',
+                      'flex items-baseline text-sm font-medium'
+                    )}
+                  >
+                    <span className="flex items-center gap-x-1">
+                      {stat.changeType === 'positive' ? (
+                        <ArrowUpIcon 
+                          className="h-3 w-3 flex-shrink-0 max-w-[12px] max-h-[12px]" 
+                          aria-hidden="true"
+                          width={12}
+                          height={12}
+                          viewBox="0 0 24 24"
+                          preserveAspectRatio="xMidYMid meet"
+                        />
+                      ) : (
+                        <ArrowDownIcon 
+                          className="h-3 w-3 flex-shrink-0 max-w-[12px] max-h-[12px]" 
+                          aria-hidden="true"
+                          width={12}
+                          height={12}
+                          viewBox="0 0 24 24"
+                          preserveAspectRatio="xMidYMid meet"
+                        />
+                      )}
+                      {stat.change}
+                    </span>
+                  </p>
+                  <span className="text-sm text-gray-500 ml-2">vs previous period</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
+              </dd>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent activity */}
+        <div className="mt-8">
+          <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
+          <div className="mt-4 flow-root">
+            <div className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+              <ul role="list" className="divide-y divide-gray-100">
+                {recentActivity.map((activity) => (
+                  <li
+                    key={activity.id}
+                    className="relative flex items-center gap-x-4 px-6 py-4 hover:bg-gray-50 sm:px-6"
+                  >
+                    <div 
+                      className={`${getActivityTypeClasses(activity.type)} rounded-lg p-2 ring-1 ring-inset`}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center">
+                        <activity.icon 
+                          className="h-4 w-4 flex-shrink-0 text-gray-600" 
+                          aria-hidden="true"
+                          width={16}
+                          height={16}
+                          viewBox="0 0 24 24"
+                          preserveAspectRatio="xMidYMid meet"
+                        />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-auto">
+                      <div className="flex items-center gap-x-3">
+                        <p className="text-sm font-medium leading-6 text-gray-900">
+                          {activity.person.name}
+                        </p>
+                        <p className="truncate text-xs text-gray-500">
+                          {activity.person.role} at {activity.person.company}
+                        </p>
+                      </div>
+                      <div className="mt-1 flex items-center gap-x-2 text-xs leading-5 text-gray-500">
+                        <p className="whitespace-nowrap">
+                          {activity.action}
+                        </p>
+                        <svg viewBox="0 0 2 2" className="h-0.5 w-0.5 fill-current">
+                          <circle cx={1} cy={1} r={1} />
+                        </svg>
+                        <p className="truncate">{activity.timestamp}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

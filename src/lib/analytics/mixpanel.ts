@@ -1,18 +1,57 @@
 import mixpanel from 'mixpanel-browser';
-import { ActivityType, TimeRange, EngagementMetrics } from './types';
+import { ActivityType, TimeRange, EngagementMetrics, AnalyticsService } from './types';
 
-export class MixpanelAnalytics {
+export class MixpanelAnalytics implements AnalyticsService {
+  private isClient: boolean;
+
   constructor() {
-    mixpanel.init(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || '', {
-      debug: process.env.NODE_ENV === 'development',
-      track_pageview: true,
-      persistence: 'localStorage',
+    this.isClient = typeof window !== 'undefined';
+    if (this.isClient) {
+      mixpanel.init(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || '', {
+        debug: process.env.NODE_ENV === 'development',
+        track_pageview: true,
+        persistence: 'localStorage',
+      });
+    }
+  }
+
+  private checkEnvironment() {
+    if (!this.isClient) {
+      console.warn('Mixpanel tracking attempted on server side - skipping');
+      return false;
+    }
+    return true;
+  }
+
+  async trackEvent(userId: string, event: string, properties: Record<string, any>): Promise<void> {
+    if (!this.checkEnvironment()) return;
+    
+    mixpanel.track(event, {
+      distinct_id: userId,
+      ...properties
     });
   }
 
-  identify(userId: string, userProperties: Record<string, any>) {
+  async identifyUser(userId: string, traits: Record<string, any>): Promise<void> {
+    if (!this.checkEnvironment()) return;
+
     mixpanel.identify(userId);
-    mixpanel.people.set(userProperties);
+    mixpanel.people.set({
+      $name: `${traits.firstName} ${traits.lastName}`,
+      $email: traits.email,
+      $phone: traits.phone,
+      ...traits.customFields
+    });
+  }
+
+  async page(userId: string, name: string, properties: Record<string, any>): Promise<void> {
+    if (!this.checkEnvironment()) return;
+
+    mixpanel.track('Page View', {
+      distinct_id: userId,
+      page_name: name,
+      ...properties
+    });
   }
 
   trackLeadActivity(leadId: string, activity: ActivityType, properties: Record<string, any> = {}) {

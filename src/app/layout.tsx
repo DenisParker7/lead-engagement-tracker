@@ -1,7 +1,13 @@
-'use client';
-
 import './globals.css';
-import { SessionProvider } from 'next-auth/react';
+import { Inter } from 'next/font/google';
+import { Providers } from './providers';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata = {
+  title: 'Lead Engagement Tracker',
+  description: 'Track and analyze your lead engagement metrics',
+};
 
 export default function RootLayout({
   children,
@@ -13,8 +19,8 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </head>
-      <body className="h-full">
-        <SessionProvider>{children}</SessionProvider>
+      <body className={`${inter.className} h-full`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

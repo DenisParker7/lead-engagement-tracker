@@ -48,4 +48,10 @@ export type ConversionRates = {
     date: string;
     rate: number;
   }>;
-}; 
+};
+
+export interface AnalyticsService {
+  trackEvent(userId: string, event: string, properties: Record<string, any>): Promise<void>;
+  identifyUser(userId: string, traits: Record<string, any>): Promise<void>;
+  page(userId: string, name: string, properties: Record<string, any>): Promise<void>;
+} 
